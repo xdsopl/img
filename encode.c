@@ -23,6 +23,40 @@ void copy(float *output, float *input, int width, int height, int length, int co
 				output[length*j+i] = 0;
 }
 
+float fsquaref(float x)
+{
+	return x * x;
+}
+
+int direction(float *input, float *work, float *prev, int pixels, int col, int row)
+{
+	if (!col && !row)
+		return 0;
+	float sum0 = 0;
+	for (int i = 0; i < pixels; ++i)
+		sum0 += fsquaref(input[i]);
+	float sum1 = 0;
+	for (int i = 0; col && i < pixels; ++i)
+		sum1 += fsquaref(input[i] - work[pixels*(col-1)+i]);
+	if (!row)
+		return sum0 < sum1 ? 0 : 1;
+	float sum2 = 0;
+	for (int i = 0; i < pixels; ++i)
+		sum2 += fsquaref(input[i] - prev[pixels*col+i]);
+	if (!col)
+		return sum0 < sum2 ? 0 : 2;
+	float sum3 = 0;
+	for (int i = 0; i < pixels; ++i)
+		sum3 += fsquaref(input[i] - prev[pixels*(col-1)+i]);
+	if (sum0 < sum1 && sum0 < sum2 && sum0 < sum3)
+		return 0;
+	if (sum1 < sum0 && sum1 < sum2 && sum1 < sum3)
+		return 1;
+	if (sum2 < sum0 && sum2 < sum1 && sum2 < sum3)
+		return 2;
+	return 3;
+}
+
 void encode(struct bits *bits, float *values, int length)
 {
 	int last = 0, pixels = length * length;
@@ -88,16 +122,17 @@ int main(int argc, char **argv)
 		put_vli(bits, quant[i]);
 	float *input = malloc(sizeof(float) * pixels);
 	float *output = malloc(sizeof(float) * pixels);
-	float *buffer = malloc(sizeof(float) * 3 * pixels);
+	float *buffer = malloc(sizeof(float) * 3 * pixels * 2 * cols);
 	for (int row = 0; row < rows; ++row) {
-		for (int i = 0; i < 3 * pixels; ++i)
-			buffer[i] = 0;
 		for (int col = 0; col < cols; ++col) {
 			for (int j = 0; j < 3; ++j) {
-				float *prev = buffer + j * pixels;
+				int ping = row & 1, pong = !ping;
+				float *prev = buffer + (ping * 3 + j) * pixels * cols;
+				float *work = buffer + (pong * 3 + j) * pixels * cols;
 				copy(input, image->buffer+j, width, height, length, col, row, 3);
-				for (int i = 0; i < pixels; ++i)
-					input[i] -= prev[i];
+				int dir = direction(input, work, prev, pixels, col, row);
+				write_bits(bits, dir, 2);
+				sub(input, work, prev, pixels, dir, col);
 				if (wavelet)
 					dwt2d(cdf97, output, input, 2, length, 1, 1);
 				else
@@ -109,8 +144,9 @@ int main(int argc, char **argv)
 					idwt2d(icdf97, input, output, 2, length, 1, 1);
 				else
 					ihaar2d(input, output, 2, length, 1, 1);
+				add(input, work, prev, pixels, dir, col);
 				for (int i = 0; i < pixels; ++i)
-					prev[i] += input[i];
+					work[pixels*col+i] = input[i];
 			}
 		}
 	}

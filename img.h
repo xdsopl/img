@@ -36,3 +36,39 @@ void dequantize(float *values, int length, int quant, int rounding)
 	}
 }
 
+void sub(float *values, float *work, float *prev, int pixels, int dir, int col)
+{
+	switch (dir) {
+	case 1:
+		for (int i = 0; i < pixels; ++i)
+			values[i] -= work[pixels*(col-1)+i];
+		break;
+	case 2:
+		for (int i = 0; i < pixels; ++i)
+			values[i] -= prev[pixels*col+i];
+		break;
+	case 3:
+		for (int i = 0; i < pixels; ++i)
+			values[i] -= prev[pixels*(col-1)+i];
+		break;
+	}
+}
+
+void add(float *values, float *work, float *prev, int pixels, int dir, int col)
+{
+	switch (dir) {
+	case 1:
+		for (int i = 0; i < pixels; ++i)
+			values[i] += work[pixels*(col-1)+i];
+		break;
+	case 2:
+		for (int i = 0; i < pixels; ++i)
+			values[i] += prev[pixels*col+i];
+		break;
+	case 3:
+		for (int i = 0; i < pixels; ++i)
+			values[i] += prev[pixels*(col-1)+i];
+		break;
+	}
+}
+

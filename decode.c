@@ -60,25 +60,26 @@ int main(int argc, char **argv)
 	int pixels = length * length;
 	float *input = malloc(sizeof(float) * pixels);
 	float *output = malloc(sizeof(float) * pixels);
-	float *buffer = malloc(sizeof(float) * 3 * pixels);
+	float *buffer = malloc(sizeof(float) * 3 * pixels * 2 * cols);
 	struct image *image = new_image(argv[2], width, height);
 	for (int row = 0; row < rows; ++row) {
-		for (int i = 0; i < 3 * pixels; ++i)
-			buffer[i] = 0;
 		for (int col = 0; col < cols; ++col) {
 			for (int j = 0; j < 3; ++j) {
-				float *prev = buffer + j * pixels;
+				int ping = row & 1, pong = !ping;
+				float *prev = buffer + (ping * 3 + j) * pixels * cols;
+				float *work = buffer + (pong * 3 + j) * pixels * cols;
+				int dir;
+				read_bits(bits, &dir, 2);
 				decode(bits, input, length);
 				dequantize(input, length, quant[j], rounding);
 				if (wavelet)
 					idwt2d(icdf97, output, input, 2, length, 1, 1);
 				else
 					ihaar2d(output, input, 2, length, 1, 1);
-				for (int i = 0; i < pixels; ++i)
-					output[i] += prev[i];
+				add(output, work, prev, pixels, dir, col);
 				copy(image->buffer+j, output, width, height, length, col, row, 3);
 				for (int i = 0; i < pixels; ++i)
-					prev[i] = output[i];
+					work[pixels*col+i] = output[i];
 			}
 		}
 	}
