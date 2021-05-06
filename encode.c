@@ -28,26 +28,30 @@ float fsquaref(float x)
 	return x * x;
 }
 
-int direction(float *input, float *work, float *prev, int pixels, int col, int row)
+int prediction(float *input, float *work, float *prev, int length, int col, int row)
 {
+	int pixels = length * length;
 	if (!col && !row)
 		return 0;
 	float sum0 = 0;
 	for (int i = 0; i < pixels; ++i)
 		sum0 += fsquaref(input[i]);
 	float sum1 = 0;
-	for (int i = 0; col && i < pixels; ++i)
-		sum1 += fsquaref(input[i] - work[pixels*(col-1)+i]);
+	for (int j = 0; col && j < length; ++j)
+		for (int i = 0; i < length; ++i)
+			sum1 += fsquaref(input[length*j+i] - work[pixels*(col-1)+length*(j+1)-1]);
 	if (!row)
 		return sum0 < sum1 ? 0 : 1;
 	float sum2 = 0;
-	for (int i = 0; i < pixels; ++i)
-		sum2 += fsquaref(input[i] - prev[pixels*col+i]);
+	for (int j = 0; j < length; ++j)
+		for (int i = 0; i < length; ++i)
+			sum2 += fsquaref(input[length*j+i] - prev[pixels*(col+1)-length+i]);
 	if (!col)
 		return sum0 < sum2 ? 0 : 2;
 	float sum3 = 0;
-	for (int i = 0; i < pixels; ++i)
-		sum3 += fsquaref(input[i] - prev[pixels*(col-1)+i]);
+	for (int j = 0; j < length; ++j)
+		for (int i = 0; i < length; ++i)
+			sum3 += fsquaref(input[length*j+i] - (work[pixels*(col-1)+length*(j+1)-1] + prev[pixels*(col+1)-length+i] - prev[pixels*col-1]));
 	if (sum0 < sum1 && sum0 < sum2 && sum0 < sum3)
 		return 0;
 	if (sum1 < sum0 && sum1 < sum2 && sum1 < sum3)
@@ -130,9 +134,9 @@ int main(int argc, char **argv)
 				float *prev = buffer + (ping * 3 + j) * pixels * cols;
 				float *work = buffer + (pong * 3 + j) * pixels * cols;
 				copy(input, image->buffer+j, width, height, length, col, row, 3);
-				int dir = direction(input, work, prev, pixels, col, row);
-				write_bits(bits, dir, 2);
-				sub(input, work, prev, pixels, dir, col);
+				int pred = prediction(input, work, prev, length, col, row);
+				write_bits(bits, pred, 2);
+				sub(input, work, prev, length, pred, col);
 				if (wavelet)
 					dwt2d(cdf97, output, input, 2, length, 1, 1);
 				else
@@ -144,7 +148,7 @@ int main(int argc, char **argv)
 					idwt2d(icdf97, input, output, 2, length, 1, 1);
 				else
 					ihaar2d(input, output, 2, length, 1, 1);
-				add(input, work, prev, pixels, dir, col);
+				add(input, work, prev, length, pred, col);
 				for (int i = 0; i < pixels; ++i)
 					work[pixels*col+i] = input[i];
 			}

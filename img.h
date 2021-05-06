@@ -36,38 +36,46 @@ void dequantize(float *values, int length, int quant, int rounding)
 	}
 }
 
-void sub(float *values, float *work, float *prev, int pixels, int dir, int col)
+void sub(float *values, float *work, float *prev, int length, int pred, int col)
 {
-	switch (dir) {
+	int pixels = length * length;
+	switch (pred) {
 	case 1:
-		for (int i = 0; i < pixels; ++i)
-			values[i] -= work[pixels*(col-1)+i];
+		for (int j = 0; col && j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] -= work[pixels*(col-1)+length*(j+1)-1];
 		break;
 	case 2:
-		for (int i = 0; i < pixels; ++i)
-			values[i] -= prev[pixels*col+i];
+		for (int j = 0; j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] -= prev[pixels*(col+1)-length+i];
 		break;
 	case 3:
-		for (int i = 0; i < pixels; ++i)
-			values[i] -= prev[pixels*(col-1)+i];
+		for (int j = 0; j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] -= work[pixels*(col-1)+length*(j+1)-1] + prev[pixels*(col+1)-length+i] - prev[pixels*col-1];
 		break;
 	}
 }
 
-void add(float *values, float *work, float *prev, int pixels, int dir, int col)
+void add(float *values, float *work, float *prev, int length, int pred, int col)
 {
-	switch (dir) {
+	int pixels = length * length;
+	switch (pred) {
 	case 1:
-		for (int i = 0; i < pixels; ++i)
-			values[i] += work[pixels*(col-1)+i];
+		for (int j = 0; col && j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] += work[pixels*(col-1)+length*(j+1)-1];
 		break;
 	case 2:
-		for (int i = 0; i < pixels; ++i)
-			values[i] += prev[pixels*col+i];
+		for (int j = 0; j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] += prev[pixels*(col+1)-length+i];
 		break;
 	case 3:
-		for (int i = 0; i < pixels; ++i)
-			values[i] += prev[pixels*(col-1)+i];
+		for (int j = 0; j < length; ++j)
+			for (int i = 0; i < length; ++i)
+				values[length*j+i] += work[pixels*(col-1)+length*(j+1)-1] + prev[pixels*(col+1)-length+i] - prev[pixels*col-1];
 		break;
 	}
 }
