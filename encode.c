@@ -28,26 +28,24 @@ float fsquaref(float x)
 	return x * x;
 }
 
-int prediction(float *input, float *work, float *prev, int length, int col, int row)
+int prediction(float *input, float *work, float *prev, int length, int col)
 {
 	int pixels = length * length;
-	if (!col && !row)
-		return 0;
+	float avg0 = 0;
+	for (int i = 0; i < length; ++i)
+		avg0 += work[pixels*(col-1)+length*(i+1)-1] + prev[pixels*(col+1)-length+i];
+	avg0 /= 2 * length;
 	float sum0 = 0;
 	for (int i = 0; i < pixels; ++i)
-		sum0 += fsquaref(input[i]);
+		sum0 += fsquaref(input[i] - avg0);
 	float sum1 = 0;
-	for (int j = 0; col && j < length; ++j)
+	for (int j = 0; j < length; ++j)
 		for (int i = 0; i < length; ++i)
 			sum1 += fsquaref(input[length*j+i] - work[pixels*(col-1)+length*(j+1)-1]);
-	if (!row)
-		return sum0 < sum1 ? 0 : 1;
 	float sum2 = 0;
 	for (int j = 0; j < length; ++j)
 		for (int i = 0; i < length; ++i)
 			sum2 += fsquaref(input[length*j+i] - prev[pixels*(col+1)-length+i]);
-	if (!col)
-		return sum0 < sum2 ? 0 : 2;
 	float sum3 = 0;
 	for (int j = 0; j < length; ++j)
 		for (int i = 0; i < length; ++i)
@@ -136,7 +134,7 @@ int main(int argc, char **argv)
 				copy(input, image->buffer+j, width, height, length, col, row, 3);
 				int pred = !!col + 2*!!row;
 				if (col && row) {
-					pred = prediction(input, work, prev, length, col, row);
+					pred = prediction(input, work, prev, length, col);
 					write_bits(bits, pred, 2);
 				}
 				if (col || row)

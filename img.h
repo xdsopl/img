@@ -40,6 +40,14 @@ void sub(float *values, float *work, float *prev, int length, int pred, int col)
 {
 	int pixels = length * length;
 	switch (pred) {
+	case 0: {
+			float avg0 = 0;
+			for (int i = 0; i < length; ++i)
+				avg0 += work[pixels*(col-1)+length*(i+1)-1] + prev[pixels*(col+1)-length+i];
+			avg0 /= 2 * length;
+			for (int i = 0; i < pixels; ++i)
+				values[i] -= avg0;
+		} break;
 	case 1:
 		for (int j = 0; col && j < length; ++j)
 			for (int i = 0; i < length; ++i)
@@ -62,6 +70,14 @@ void add(float *values, float *work, float *prev, int length, int pred, int col)
 {
 	int pixels = length * length;
 	switch (pred) {
+	case 0: {
+			float avg0 = 0;
+			for (int i = 0; i < length; ++i)
+				avg0 += work[pixels*(col-1)+length*(i+1)-1] + prev[pixels*(col+1)-length+i];
+			avg0 /= 2 * length;
+			for (int i = 0; i < pixels; ++i)
+				values[i] += avg0;
+		} break;
 	case 1:
 		for (int j = 0; col && j < length; ++j)
 			for (int i = 0; i < length; ++i)
