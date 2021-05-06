@@ -68,12 +68,14 @@ int main(int argc, char **argv)
 				int ping = row & 1, pong = !ping;
 				float *prev = buffer + (ping * 3 + j) * pixels * cols;
 				float *work = buffer + (pong * 3 + j) * pixels * cols;
-				int pred;
-				read_bits(bits, &pred, 2);
+				int pred = !!col + 2*!!row;
+				if (col && row)
+					read_bits(bits, &pred, 2);
 				decode(bits, input, length);
 				dequantize(input, length, quant[j], rounding);
 				idwt2(wavelet ? icdf97 : ihaar, output, input, 2, length, 1, 1);
-				add(output, work, prev, length, pred, col);
+				if (col || row)
+					add(output, work, prev, length, pred, col);
 				copy(image->buffer+j, output, width, height, length, col, row, 3);
 				for (int i = 0; i < pixels; ++i)
 					work[pixels*col+i] = output[i];

@@ -134,15 +134,20 @@ int main(int argc, char **argv)
 				float *prev = buffer + (ping * 3 + j) * pixels * cols;
 				float *work = buffer + (pong * 3 + j) * pixels * cols;
 				copy(input, image->buffer+j, width, height, length, col, row, 3);
-				int pred = prediction(input, work, prev, length, col, row);
-				write_bits(bits, pred, 2);
-				sub(input, work, prev, length, pred, col);
+				int pred = !!col + 2*!!row;
+				if (col && row) {
+					pred = prediction(input, work, prev, length, col, row);
+					write_bits(bits, pred, 2);
+				}
+				if (col || row)
+					sub(input, work, prev, length, pred, col);
 				dwt2(wavelet ? cdf97 : haar, output, input, 2, length, 1, 1);
 				quantize(output, length, quant[j], rounding);
 				encode(bits, output, length);
 				dequantize(output, length, quant[j], rounding);
 				idwt2(wavelet ? icdf97 : ihaar, input, output, 2, length, 1, 1);
-				add(input, work, prev, length, pred, col);
+				if (col || row)
+					add(input, work, prev, length, pred, col);
 				for (int i = 0; i < pixels; ++i)
 					work[pixels*col+i] = input[i];
 			}
