@@ -137,17 +137,11 @@ int main(int argc, char **argv)
 				int pred = prediction(input, work, prev, length, col, row);
 				write_bits(bits, pred, 2);
 				sub(input, work, prev, length, pred, col);
-				if (wavelet)
-					dwt2d(cdf97, output, input, 2, length, 1, 1);
-				else
-					haar2d(output, input, 2, length, 1, 1);
+				dwt2(wavelet ? cdf97 : haar, output, input, 2, length, 1, 1);
 				quantize(output, length, quant[j], rounding);
 				encode(bits, output, length);
 				dequantize(output, length, quant[j], rounding);
-				if (wavelet)
-					idwt2d(icdf97, input, output, 2, length, 1, 1);
-				else
-					ihaar2d(input, output, 2, length, 1, 1);
+				idwt2(wavelet ? icdf97 : ihaar, input, output, 2, length, 1, 1);
 				add(input, work, prev, length, pred, col);
 				for (int i = 0; i < pixels; ++i)
 					work[pixels*col+i] = input[i];

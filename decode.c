@@ -72,10 +72,7 @@ int main(int argc, char **argv)
 				read_bits(bits, &pred, 2);
 				decode(bits, input, length);
 				dequantize(input, length, quant[j], rounding);
-				if (wavelet)
-					idwt2d(icdf97, output, input, 2, length, 1, 1);
-				else
-					ihaar2d(output, input, 2, length, 1, 1);
+				idwt2(wavelet ? icdf97 : ihaar, output, input, 2, length, 1, 1);
 				add(output, work, prev, length, pred, col);
 				copy(image->buffer+j, output, width, height, length, col, row, 3);
 				for (int i = 0; i < pixels; ++i)
