@@ -1,11 +1,17 @@
 CFLAGS = -std=c99 -W -Wall -O3 -D_GNU_SOURCE=1 -g
 LDLIBS = -lm
+RM = rm -f
 
-all: encode decode
+all: itwenc itwdec
 
-test: encode decode
-	./encode input.ppm /dev/stdout | ./decode /dev/stdin output.ppm
+test: itwenc itwdec
+	./itwenc input.ppm /dev/stdout | ./itwdec /dev/stdin output.ppm
+
+itwenc: src/encode.c
+	$(CC) $(CFLAGS) $< $(LDLIBS) -o $@
+
+itwdec: src/decode.c
+	$(CC) $(CFLAGS) $< $(LDLIBS) -o $@
 
 clean:
-	rm -f encode decode
-
+	$(RM) itwenc itwdec
