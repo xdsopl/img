@@ -1,0 +1,7 @@
+encode
+decode
+*.ppm
+*.pnm
+*.pgm
+*.img
+.*.swp
