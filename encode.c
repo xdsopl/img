@@ -86,6 +86,15 @@ FILE *open_img(const char *name, int width, int height, int channels)
 	return file;
 }
 
+void leb128(FILE *file, int value)
+{
+	while (value >= 128) {
+		fputc((value & 127) | 128, file);
+		value >>= 7;
+	}
+	fputc(value, file);
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 3)
@@ -120,13 +129,13 @@ int main(int argc, char **argv)
 		if (prev == diff) {
 			++count;
 		} else {
-			fwrite(&count, sizeof(int), 1, ofile);
+			leb128(ofile, count);
 			fwrite(&diff, channels, 1, ofile);
 			prev = diff;
 			count = 0;
 		}
 	}
-	fwrite(&count, sizeof(int), 1, ofile);
+	leb128(ofile, count);
 	free(line);
 	fclose(ifile);
 	fclose(ofile);

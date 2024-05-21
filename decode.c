@@ -51,6 +51,18 @@ FILE *open_pnm(const char *name, int width, int height, int channels)
 	return file;
 }
 
+int leb128(FILE *file)
+{
+	int byte, shift = 0, value = 0;
+	while ((byte = fgetc(file)) >= 128) {
+		value |= (byte & 127) << shift;
+		shift += 7;
+	}
+	if (byte < 0)
+		return byte;
+	return value | (byte << shift);
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 3)
@@ -69,8 +81,8 @@ int main(int argc, char **argv)
 		unsigned diff = 0;
 		if (1 != fread(&diff, channels, 1, ifile))
 			goto eof;
-		int count = 0;
-		if (1 != fread(&count, sizeof(int), 1, ifile))
+		int count = leb128(ifile);
+		if (count < 0)
 			goto eof;
 		for (++count; count--; ++i) {
 			unsigned value = diff + line[i%width];
