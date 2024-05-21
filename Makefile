@@ -4,7 +4,9 @@ CFLAGS = -std=c99 -W -Wall -Ofast
 all: encode decode
 
 test: encode decode
-	./encode input.pnm - | ./decode - output.pnm
+	./encode input.pnm putput.img
+	du -b putput.img
+	./decode putput.img output.pnm
 	compare -verbose -metric PSNR input.pnm output.pnm /dev/null ; true
 
 %: %.c *.h
