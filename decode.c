@@ -66,10 +66,10 @@ int main(int argc, char **argv)
 	}
 	for (int i = 0; i < width * height;) {
 		int value = 0;
-		if ((size_t)channels != fread(&value, 1, channels, ifile))
+		if (1 != fread(&value, sizeof(int), 1, ifile))
 			goto eof;
 		int count = 0;
-		if (1 != fread(&count, 4, 1, ifile))
+		if (1 != fread(&count, sizeof(int), 1, ifile))
 			goto eof;
 		for (++count; count--; ++i)
 			fwrite(&value, 1, channels, ofile);

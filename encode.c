@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 	int prev = 0;
 	if (channels != (int)fread(&prev, 1, channels, ifile))
 		goto eof;
-	fwrite(&prev, 1, channels, ofile);
+	fwrite(&prev, sizeof(int), 1, ofile);
 	int count = 0;
 	for (int i = 1; i < width * height; ++i) {
 		int value = 0;
@@ -116,13 +116,13 @@ int main(int argc, char **argv)
 		if (prev == value) {
 			++count;
 		} else {
-			fwrite(&count, 4, 1, ofile);
-			fwrite(&value, 1, channels, ofile);
+			fwrite(&count, sizeof(int), 1, ofile);
+			fwrite(&value, sizeof(int), 1, ofile);
 			prev = value;
 			count = 0;
 		}
 	}
-	fwrite(&count, 4, 1, ofile);
+	fwrite(&count, sizeof(int), 1, ofile);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
