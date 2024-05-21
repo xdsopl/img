@@ -107,27 +107,33 @@ int main(int argc, char **argv)
 	int prev = 0;
 	if (channels != (int)fread(&prev, 1, channels, ifile))
 		goto eof;
+	int *line = calloc(width, sizeof(int));
+	line[0] = prev;
 	fwrite(&prev, sizeof(int), 1, ofile);
 	int count = 0;
 	for (int i = 1; i < width * height; ++i) {
 		int value = 0;
 		if (channels != (int)fread(&value, 1, channels, ifile))
 			goto eof;
-		if (prev == value) {
+		int diff = value - line[i%width];
+		line[i%width] = value;
+		if (prev == diff) {
 			++count;
 		} else {
 			fwrite(&count, sizeof(int), 1, ofile);
-			fwrite(&value, sizeof(int), 1, ofile);
-			prev = value;
+			fwrite(&diff, sizeof(int), 1, ofile);
+			prev = diff;
 			count = 0;
 		}
 	}
 	fwrite(&count, sizeof(int), 1, ofile);
+	free(line);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
 eof:
 	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
+	free(line);
 	fclose(ifile);
 	fclose(ofile);
 	return 1;

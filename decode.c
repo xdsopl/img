@@ -64,21 +64,27 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
+	int *line = calloc(width, sizeof(int));
 	for (int i = 0; i < width * height;) {
-		int value = 0;
-		if (1 != fread(&value, sizeof(int), 1, ifile))
+		int diff = 0;
+		if (1 != fread(&diff, sizeof(int), 1, ifile))
 			goto eof;
 		int count = 0;
 		if (1 != fread(&count, sizeof(int), 1, ifile))
 			goto eof;
-		for (++count; count--; ++i)
+		for (++count; count--; ++i) {
+			int value = diff + line[i%width];
+			line[i%width] = value;
 			fwrite(&value, 1, channels, ofile);
+		}
 	}
+	free(line);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
 eof:
 	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
+	free(line);
 	fclose(ifile);
 	fclose(ofile);
 	return 1;
