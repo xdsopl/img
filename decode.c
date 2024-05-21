@@ -64,16 +64,16 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	int *line = calloc(width, sizeof(int));
+	unsigned *line = calloc(width, sizeof(unsigned));
 	for (int i = 0; i < width * height;) {
-		int diff = 0;
-		if (1 != fread(&diff, sizeof(int), 1, ifile))
+		unsigned diff = 0;
+		if (1 != fread(&diff, channels, 1, ifile))
 			goto eof;
 		int count = 0;
 		if (1 != fread(&count, sizeof(int), 1, ifile))
 			goto eof;
 		for (++count; count--; ++i) {
-			int value = diff + line[i%width];
+			unsigned value = diff + line[i%width];
 			line[i%width] = value;
 			fwrite(&value, 1, channels, ofile);
 		}

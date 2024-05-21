@@ -104,24 +104,24 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	int prev = 0;
+	unsigned *line = calloc(width, sizeof(unsigned));
+	unsigned prev = 0;
 	if (channels != (int)fread(&prev, 1, channels, ifile))
 		goto eof;
-	int *line = calloc(width, sizeof(int));
 	line[0] = prev;
-	fwrite(&prev, sizeof(int), 1, ofile);
+	fwrite(&prev, channels, 1, ofile);
 	int count = 0;
 	for (int i = 1; i < width * height; ++i) {
-		int value = 0;
+		unsigned value = 0;
 		if (channels != (int)fread(&value, 1, channels, ifile))
 			goto eof;
-		int diff = value - line[i%width];
+		unsigned diff = value - line[i%width];
 		line[i%width] = value;
 		if (prev == diff) {
 			++count;
 		} else {
 			fwrite(&count, sizeof(int), 1, ofile);
-			fwrite(&diff, sizeof(int), 1, ofile);
+			fwrite(&diff, channels, 1, ofile);
 			prev = diff;
 			count = 0;
 		}
