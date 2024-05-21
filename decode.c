@@ -6,6 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 FILE *open_img(const char *name, int *width, int *height, int *channels)
 {
@@ -63,10 +64,23 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	for (int i = 0; i < width * height * channels; ++i)
-		fputc(fgetc(ifile), ofile);
+	for (int i = 0; i < width * height;) {
+		int value = 0;
+		if ((size_t)channels != fread(&value, 1, channels, ifile))
+			goto eof;
+		int count = 0;
+		if (1 != fread(&count, 4, 1, ifile))
+			goto eof;
+		for (++count; count--; ++i)
+			fwrite(&value, 1, channels, ofile);
+	}
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
+eof:
+	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
+	fclose(ifile);
+	fclose(ofile);
+	return 1;
 }
 

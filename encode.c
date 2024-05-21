@@ -6,6 +6,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 FILE *open_pnm(const char *name, int *width, int *height, int *channels)
 {
@@ -103,10 +104,32 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	for (int i = 0; i < width * height * channels; ++i)
-		fputc(fgetc(ifile), ofile);
+	int prev = 0;
+	if (channels != (int)fread(&prev, 1, channels, ifile))
+		goto eof;
+	fwrite(&prev, 1, channels, ofile);
+	int count = 0;
+	for (int i = 1; i < width * height; ++i) {
+		int value = 0;
+		if (channels != (int)fread(&value, 1, channels, ifile))
+			goto eof;
+		if (prev == value) {
+			++count;
+		} else {
+			fwrite(&count, 4, 1, ofile);
+			fwrite(&value, 1, channels, ofile);
+			prev = value;
+			count = 0;
+		}
+	}
+	fwrite(&count, 4, 1, ofile);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
+eof:
+	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
+	fclose(ifile);
+	fclose(ofile);
+	return 1;
 }
 
