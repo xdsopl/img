@@ -84,10 +84,10 @@ int main(int argc, char **argv)
 			int mode = fgetc(ifile);
 			if (mode < 0)
 				goto eof;
-			if (mode == 0) {
+			if (mode == 1) {
 				if (width != (int)fread(line[c], 1, width, ifile))
 					goto eof;
-			} else {
+			} else if (mode == 2) {
 				for (int i = 0; i < width;) {
 					uint8_t diff = 0;
 					if (1 != fread(&diff, 1, 1, ifile))

@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 		for (int c = 0; c < channels; ++c)
 			pos[c] = stream[c];
 		uint8_t prev[3];
+		int different[3] = { 0, 0, 0 };
 		int count[3] = { 0, 0, 0 };
 		for (int i = 0; i < width; ++i) {
 			uint8_t value[3];
@@ -132,6 +133,7 @@ int main(int argc, char **argv)
 				goto eof;
 			for (int c = 0; c < channels; ++c) {
 				uint8_t diff = value[c] - line[c][i];
+				different[c] |= diff;
 				line[c][i] = value[c];
 				if (!i) {
 					*pos[c]++ = diff;
@@ -149,11 +151,13 @@ int main(int argc, char **argv)
 		for (int c = 0; c < channels; ++c) {
 			pos[c] = leb128(pos[c], count[c]);
 			int bytes = pos[c] - stream[c];
-			if (bytes >= width) {
+			if (!different[c]) {
 				fputc(0, ofile);
+			} else if (bytes >= width) {
+				fputc(1, ofile);
 				fwrite(line[c], 1, width, ofile);
 			} else {
-				fputc(1, ofile);
+				fputc(2, ofile);
 				fwrite(stream[c], 1, bytes, ofile);
 			}
 		}
