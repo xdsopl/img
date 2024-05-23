@@ -81,16 +81,24 @@ int main(int argc, char **argv)
 		line[i] = line[i-1] + width;
 	for (int j = 0; j < height; ++j) {
 		for (int c = 0; c < channels; ++c) {
-			for (int i = 0; i < width;) {
-				uint8_t diff = 0;
-				if (1 != fread(&diff, 1, 1, ifile))
+			int mode = fgetc(ifile);
+			if (mode < 0)
+				goto eof;
+			if (mode == 0) {
+				if (width != (int)fread(line[c], 1, width, ifile))
 					goto eof;
-				int count = leb128(ifile);
-				if (count < 0)
-					goto eof;
-				for (++count; count--; ++i) {
-					uint8_t value = diff + line[c][i];
-					line[c][i] = value;
+			} else {
+				for (int i = 0; i < width;) {
+					uint8_t diff = 0;
+					if (1 != fread(&diff, 1, 1, ifile))
+						goto eof;
+					int count = leb128(ifile);
+					if (count < 0)
+						goto eof;
+					for (++count; count--; ++i) {
+						uint8_t value = diff + line[c][i];
+						line[c][i] = value;
+					}
 				}
 			}
 		}

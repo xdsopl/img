@@ -146,10 +146,17 @@ int main(int argc, char **argv)
 				}
 			}
 		}
-		for (int c = 0; c < channels; ++c)
+		for (int c = 0; c < channels; ++c) {
 			pos[c] = leb128(pos[c], count[c]);
-		for (int c = 0; c < channels; ++c)
-			fwrite(stream[c], 1, pos[c] - stream[c], ofile);
+			int bytes = pos[c] - stream[c];
+			if (bytes >= width) {
+				fputc(0, ofile);
+				fwrite(line[c], 1, width, ofile);
+			} else {
+				fputc(1, ofile);
+				fwrite(stream[c], 1, bytes, ofile);
+			}
+		}
 	}
 	free(*stream);
 	free(*line);
