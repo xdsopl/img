@@ -95,6 +95,12 @@ void leb128(FILE *file, int value)
 	fputc(value, file);
 }
 
+void encode(FILE *file, unsigned diff, int count, int channels)
+{
+	fwrite(&diff, channels, 1, file);
+	leb128(file, count);
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 3)
@@ -114,7 +120,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	unsigned *line = calloc(width, sizeof(unsigned));
-	unsigned prev;
+	unsigned prev = 0;
 	int count = 0;
 	for (int i = 0; i < width * height; ++i) {
 		unsigned value = 0;
@@ -127,14 +133,12 @@ int main(int argc, char **argv)
 		} else if (prev == diff) {
 			++count;
 		} else {
-			fwrite(&prev, channels, 1, ofile);
-			leb128(ofile, count);
+			encode(ofile, prev, count, channels);
 			prev = diff;
 			count = 0;
 		}
 	}
-	fwrite(&prev, channels, 1, ofile);
-	leb128(ofile, count);
+	encode(ofile, prev, count, channels);
 	free(line);
 	fclose(ifile);
 	fclose(ofile);

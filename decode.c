@@ -63,6 +63,14 @@ int leb128(FILE *file)
 	return value | (byte << shift);
 }
 
+int decode(FILE *file, unsigned *diff, int *count, int channels)
+{
+	if (1 != fread(diff, channels, 1, file))
+		return 1;
+	*count = leb128(file);
+	return *count < 0;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 3)
@@ -79,10 +87,8 @@ int main(int argc, char **argv)
 	unsigned *line = calloc(width, sizeof(unsigned));
 	for (int i = 0; i < width * height;) {
 		unsigned diff = 0;
-		if (1 != fread(&diff, channels, 1, ifile))
-			goto eof;
-		int count = leb128(ifile);
-		if (count < 0)
+		int count = 0;
+		if (decode(ifile, &diff, &count, channels))
 			goto eof;
 		for (++count; count--; ++i) {
 			unsigned value = diff + line[i%width];
