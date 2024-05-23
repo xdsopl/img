@@ -76,27 +76,35 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	unsigned *line = calloc(width, sizeof(unsigned));
-	for (int i = 0; i < width * height;) {
-		unsigned diff = 0;
-		if (1 != fread(&diff, channels, 1, ifile))
-			goto eof;
-		int count = leb128(ifile);
-		if (count < 0)
-			goto eof;
-		for (++count; count--; ++i) {
-			unsigned value = diff + line[i%width];
-			line[i%width] = value;
-			fwrite(&value, 1, channels, ofile);
+	uint8_t *line[3] = { calloc(width, channels) };
+	for (int i = 1; i < channels; ++i)
+		line[i] = line[i-1] + width;
+	for (int j = 0; j < height; ++j) {
+		for (int c = 0; c < channels; ++c) {
+			for (int i = 0; i < width;) {
+				uint8_t diff = 0;
+				if (1 != fread(&diff, 1, 1, ifile))
+					goto eof;
+				int count = leb128(ifile);
+				if (count < 0)
+					goto eof;
+				for (++count; count--; ++i) {
+					uint8_t value = diff + line[c][i];
+					line[c][i] = value;
+				}
+			}
 		}
+		for (int i = 0; i < width; ++i)
+			for (int c = 0; c < channels; ++c)
+				fputc(line[c][i], ofile);
 	}
-	free(line);
+	free(*line);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
 eof:
 	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
-	free(line);
+	free(*line);
 	fclose(ifile);
 	fclose(ofile);
 	return 1;

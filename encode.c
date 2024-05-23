@@ -86,13 +86,14 @@ FILE *open_img(const char *name, int width, int height, int channels)
 	return file;
 }
 
-void leb128(FILE *file, int value)
+uint8_t *leb128(uint8_t *stream, int value)
 {
 	while (value >= 128) {
-		fputc((value & 127) | 128, file);
+		*stream++ = (value & 127) | 128;
 		value >>= 7;
 	}
-	fputc(value, file);
+	*stream++ = value;
+	return stream;
 }
 
 int main(int argc, char **argv)
@@ -113,36 +114,52 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	unsigned *line = calloc(width, sizeof(unsigned));
-	unsigned prev = 0;
-	if (channels != (int)fread(&prev, 1, channels, ifile))
-		goto eof;
-	line[0] = prev;
-	fwrite(&prev, channels, 1, ofile);
-	int count = 0;
-	for (int i = 1; i < width * height; ++i) {
-		unsigned value = 0;
-		if (channels != (int)fread(&value, 1, channels, ifile))
-			goto eof;
-		unsigned diff = value - line[i%width];
-		line[i%width] = value;
-		if (prev == diff) {
-			++count;
-		} else {
-			leb128(ofile, count);
-			fwrite(&diff, channels, 1, ofile);
-			prev = diff;
-			count = 0;
+	uint8_t *line[3] = { calloc(width, channels) };
+	for (int i = 1; i < channels; ++i)
+		line[i] = line[i-1] + width;
+	uint8_t *stream[3] = { malloc(2 * width * channels) };
+	for (int i = 1; i < channels; ++i)
+		stream[i] = stream[i-1] + 2 * width;
+	for (int j = 0; j < height; ++j) {
+		uint8_t *pos[3];
+		for (int c = 0; c < channels; ++c)
+			pos[c] = stream[c];
+		uint8_t prev[3];
+		int count[3] = { 0, 0, 0 };
+		for (int i = 0; i < width; ++i) {
+			uint8_t value[3];
+			if (channels != (int)fread(value, 1, channels, ifile))
+				goto eof;
+			for (int c = 0; c < channels; ++c) {
+				uint8_t diff = value[c] - line[c][i];
+				line[c][i] = value[c];
+				if (!i) {
+					*pos[c]++ = diff;
+					prev[c] = diff;
+				} else if (prev[c] == diff) {
+					++count[c];
+				} else {
+					pos[c] = leb128(pos[c], count[c]);
+					*pos[c]++ = diff;
+					prev[c] = diff;
+					count[c] = 0;
+				}
+			}
 		}
+		for (int c = 0; c < channels; ++c)
+			pos[c] = leb128(pos[c], count[c]);
+		for (int c = 0; c < channels; ++c)
+			fwrite(stream[c], 1, pos[c] - stream[c], ofile);
 	}
-	leb128(ofile, count);
-	free(line);
+	free(*stream);
+	free(*line);
 	fclose(ifile);
 	fclose(ofile);
 	return 0;
 eof:
 	fprintf(stderr, "EOF while reading from \"%s\"\n", argv[1]);
-	free(line);
+	free(*stream);
+	free(*line);
 	fclose(ifile);
 	fclose(ofile);
 	return 1;
