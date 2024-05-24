@@ -86,7 +86,7 @@ FILE *open_img(const char *name, int width, int height, int channels)
 	return file;
 }
 
-void leb128(FILE *file, int value)
+void leb128(FILE *file, long value)
 {
 	while (value >= 128) {
 		fputc((value & 127) | 128, file);
@@ -95,7 +95,7 @@ void leb128(FILE *file, int value)
 	fputc(value, file);
 }
 
-void encode(FILE *file, unsigned diff, int count, int channels)
+void encode(FILE *file, unsigned diff, long count, int channels)
 {
 	fwrite(&diff, channels, 1, file);
 	leb128(file, count);
@@ -121,8 +121,8 @@ int main(int argc, char **argv)
 	}
 	unsigned *line = calloc(width, sizeof(unsigned));
 	unsigned prev = 0;
-	int count = 0;
-	for (int i = 0; i < width * height; ++i) {
+	long count = 0;
+	for (long i = 0; i < width * height; ++i) {
 		unsigned value = 0;
 		if (channels != (int)fread(&value, 1, channels, ifile))
 			goto eof;

@@ -51,9 +51,9 @@ FILE *open_pnm(const char *name, int width, int height, int channels)
 	return file;
 }
 
-int leb128(FILE *file)
+long leb128(FILE *file)
 {
-	int byte, shift = 0, value = 0;
+	long byte, shift = 0, value = 0;
 	while ((byte = fgetc(file)) >= 128) {
 		value |= (byte & 127) << shift;
 		shift += 7;
@@ -63,7 +63,7 @@ int leb128(FILE *file)
 	return value | (byte << shift);
 }
 
-int decode(FILE *file, unsigned *diff, int *count, int channels)
+int decode(FILE *file, unsigned *diff, long *count, int channels)
 {
 	if (1 != fread(diff, channels, 1, file))
 		return 1;
@@ -85,9 +85,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	unsigned *line = calloc(width, sizeof(unsigned));
-	for (int i = 0; i < width * height;) {
+	for (long i = 0; i < width * height;) {
 		unsigned diff = 0;
-		int count = 0;
+		long count = 0;
 		if (decode(ifile, &diff, &count, channels))
 			goto eof;
 		for (++count; count--; ++i) {
