@@ -128,30 +128,33 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	uint8_t *line = calloc(width, channels);
-	long previous = 0, counter = 0;
+	int prev[3] = { 0, 0, 0 };
+	long count = 0;
 	for (long i = 0; i < width * height; ++i) {
-		int diff[3];
+		int diff[3], equal = 1;
 		for (int c = 0; c < channels; ++c) {
 			int value = fgetc(ifile);
 			if (value < 0)
 				goto eof;
 			diff[c] = abs_sgn(value - line[(i%width)*channels+c]);
 			line[(i%width)*channels+c] = value;
+			equal &= diff[c] == prev[c];
 		}
-		long mixed = interleave(diff, channels, 9);
 		if (!i) {
-			previous = mixed;
-		} else if (previous == mixed) {
-			++counter;
+			for (int c = 0; c < channels; ++c)
+				prev[c] = diff[c];
+		} else if (equal) {
+			++count;
 		} else {
-			leb128(ofile, counter);
-			leb128(ofile, previous);
-			previous = mixed;
-			counter = 0;
+			leb128(ofile, count);
+			leb128(ofile, interleave(prev, channels, 9));
+			for (int c = 0; c < channels; ++c)
+				prev[c] = diff[c];
+			count = 0;
 		}
 	}
-	leb128(ofile, counter);
-	leb128(ofile, previous);
+	leb128(ofile, count);
+	leb128(ofile, interleave(prev, channels, 9));
 	free(line);
 	fclose(ifile);
 	fclose(ofile);
