@@ -146,26 +146,26 @@ int main(int argc, char **argv)
 		} else if (equal) {
 			++count;
 		} else {
-			if (count < 511) {
+			if (count < 255) {
 				prev[channels] = count;
 				leb128(ofile, interleave(prev, channels + 1, 9));
 			} else {
-				prev[channels] = 511;
+				prev[channels] = 255;
 				leb128(ofile, interleave(prev, channels + 1, 9));
-				leb128(ofile, count - 511);
+				leb128(ofile, count - 255);
 			}
 			for (int c = 0; c < channels; ++c)
 				prev[c] = diff[c];
 			count = 0;
 		}
 	}
-	if (count < 511) {
+	if (count < 255) {
 		prev[channels] = count;
 		leb128(ofile, interleave(prev, channels + 1, 9));
 	} else {
-		prev[channels] = 511;
+		prev[channels] = 255;
 		leb128(ofile, interleave(prev, channels + 1, 9));
-		leb128(ofile, count - 511);
+		leb128(ofile, count - 255);
 	}
 	free(line);
 	fclose(ifile);

@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		for (int c = 0; c < channels; ++c)
 			diff[c] = sgn_int(diff[c]);
 		long count = diff[channels];
-		if (count == 511)
+		if (count == 255)
 			count += leb128(ifile);
 		for (++count; count--; ++i) {
 			for (int c = 0; c < channels; ++c) {
