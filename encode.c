@@ -100,7 +100,7 @@ long interleave(const int *values, int count, int bits)
 	long mixed = 0;
 	for (int j = 0; j < count; ++j)
 		for (int i = 0; i < bits; ++i)
-			mixed |= ((values[j] >> i) & 1) << (count * i + j);
+			mixed |= ((values[j] >> i) & 1L) << (count * i + j);
 	return mixed;
 }
 
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	uint8_t *line = calloc(width, channels);
-	int prev[3] = { 0, 0, 0 };
+	int prev[4] = { 0, 0, 0, 0 };
 	long count = 0;
 	for (long i = 0; i < width * height; ++i) {
 		int diff[3], equal = 1;
@@ -146,15 +146,27 @@ int main(int argc, char **argv)
 		} else if (equal) {
 			++count;
 		} else {
-			leb128(ofile, count);
-			leb128(ofile, interleave(prev, channels, 9));
+			if (count < 511) {
+				prev[channels] = count;
+				leb128(ofile, interleave(prev, channels + 1, 9));
+			} else {
+				prev[channels] = 511;
+				leb128(ofile, interleave(prev, channels + 1, 9));
+				leb128(ofile, count - 511);
+			}
 			for (int c = 0; c < channels; ++c)
 				prev[c] = diff[c];
 			count = 0;
 		}
 	}
-	leb128(ofile, count);
-	leb128(ofile, interleave(prev, channels, 9));
+	if (count < 511) {
+		prev[channels] = count;
+		leb128(ofile, interleave(prev, channels + 1, 9));
+	} else {
+		prev[channels] = 511;
+		leb128(ofile, interleave(prev, channels + 1, 9));
+		leb128(ofile, count - 511);
+	}
 	free(line);
 	fclose(ifile);
 	fclose(ofile);

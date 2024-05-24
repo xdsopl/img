@@ -92,15 +92,17 @@ int main(int argc, char **argv)
 	}
 	uint8_t *line = calloc(width, channels);
 	for (long i = 0; i < width * height;) {
-		long counter = leb128(ifile);
 		long mixed = leb128(ifile);
 		if (mixed < 0)
 			goto eof;
-		int diff[3];
-		deinterleave(mixed, diff, channels, 9);
+		int diff[4];
+		deinterleave(mixed, diff, channels + 1, 9);
 		for (int c = 0; c < channels; ++c)
 			diff[c] = sgn_int(diff[c]);
-		for (++counter; counter--; ++i) {
+		long count = diff[channels];
+		if (count == 511)
+			count += leb128(ifile);
+		for (++count; count--; ++i) {
 			for (int c = 0; c < channels; ++c) {
 				int value = diff[c] + line[(i%width)*channels+c];
 				line[(i%width)*channels+c] = value;
