@@ -4,7 +4,6 @@ Decoder for lossless image compression
 Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 */
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -64,12 +63,13 @@ long leb128(FILE *file)
 	return value | (byte << shift);
 }
 
-long unpair(long *z)
+void deinterleave(long mixed, int *values, int count, int bits)
 {
-	long w = (sqrt(8 * *z + 1) - 1) / 2;
-	long t = (w * w + w) / 2;
-	*z -= t;
-	return w - *z;
+	for (int j = 0; j < count; ++j) {
+		values[j] = 0;
+		for (int i = 0; i < bits; ++i)
+			values[j] |= ((mixed >> (count * i + j)) & 1) << i;
+	}
 }
 
 int sgn_int(int x)
@@ -93,13 +93,13 @@ int main(int argc, char **argv)
 	uint8_t *line = calloc(width, channels);
 	for (long i = 0; i < width * height;) {
 		long counter = leb128(ifile);
-		long paired = leb128(ifile);
-		if (paired < 0)
+		long mixed = leb128(ifile);
+		if (mixed < 0)
 			goto eof;
 		int diff[3];
-		for (int c = channels - 1; c; --c)
-			diff[c] = sgn_int(unpair(&paired));
-		diff[0] = sgn_int(paired);
+		deinterleave(mixed, diff, channels, 9);
+		for (int c = 0; c < channels; ++c)
+			diff[c] = sgn_int(diff[c]);
 		for (++counter; counter--; ++i) {
 			for (int c = 0; c < channels; ++c) {
 				int value = diff[c] + line[(i%width)*channels+c];

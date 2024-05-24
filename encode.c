@@ -95,9 +95,13 @@ void leb128(FILE *file, long value)
 	fputc(value, file);
 }
 
-void pair(long *y, long x)
+long interleave(const int *values, int count, int bits)
 {
-	*y = (x * x + x + 2 * x * *y + 3 * *y + *y * *y) / 2;
+	long mixed = 0;
+	for (int j = 0; j < count; ++j)
+		for (int i = 0; i < bits; ++i)
+			mixed |= ((values[j] >> i) & 1) << (count * i + j);
+	return mixed;
 }
 
 int abs_sgn(int x)
@@ -126,26 +130,23 @@ int main(int argc, char **argv)
 	uint8_t *line = calloc(width, channels);
 	long previous = 0, counter = 0;
 	for (long i = 0; i < width * height; ++i) {
-		long packed = 0;
+		int diff[3];
 		for (int c = 0; c < channels; ++c) {
 			int value = fgetc(ifile);
 			if (value < 0)
 				goto eof;
-			int diff = abs_sgn(value - line[(i%width)*channels+c]);
+			diff[c] = abs_sgn(value - line[(i%width)*channels+c]);
 			line[(i%width)*channels+c] = value;
-			if (c)
-				pair(&packed, diff);
-			else
-				packed = diff;
 		}
+		long mixed = interleave(diff, channels, 9);
 		if (!i) {
-			previous = packed;
-		} else if (previous == packed) {
+			previous = mixed;
+		} else if (previous == mixed) {
 			++counter;
 		} else {
 			leb128(ofile, counter);
 			leb128(ofile, previous);
-			previous = packed;
+			previous = mixed;
 			counter = 0;
 		}
 	}
