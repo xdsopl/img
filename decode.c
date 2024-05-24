@@ -4,6 +4,7 @@ Decoder for lossless image compression
 Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -63,12 +64,17 @@ long leb128(FILE *file)
 	return value | (byte << shift);
 }
 
-int decode(FILE *file, unsigned *diff, long *count, int channels)
+long unpair(long *z)
 {
-	if (1 != fread(diff, channels, 1, file))
-		return 1;
-	*count = leb128(file);
-	return *count < 0;
+	long w = (sqrt(8 * *z + 1) - 1) / 2;
+	long t = (w * w + w) / 2;
+	*z -= t;
+	return w - *z;
+}
+
+int sgn_int(int x)
+{
+	return (x & 1) ? -(x >> 1) : (x >> 1);
 }
 
 int main(int argc, char **argv)
@@ -84,16 +90,22 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	unsigned *line = calloc(width, sizeof(unsigned));
+	uint8_t *line = calloc(width, channels);
 	for (long i = 0; i < width * height;) {
-		unsigned diff = 0;
-		long count = 0;
-		if (decode(ifile, &diff, &count, channels))
+		long counter = leb128(ifile);
+		long paired = leb128(ifile);
+		if (paired < 0)
 			goto eof;
-		for (++count; count--; ++i) {
-			unsigned value = diff + line[i%width];
-			line[i%width] = value;
-			fwrite(&value, 1, channels, ofile);
+		int diff[3];
+		for (int c = channels - 1; c; --c)
+			diff[c] = sgn_int(unpair(&paired));
+		diff[0] = sgn_int(paired);
+		for (++counter; counter--; ++i) {
+			for (int c = 0; c < channels; ++c) {
+				int value = diff[c] + line[(i%width)*channels+c];
+				line[(i%width)*channels+c] = value;
+				fputc(value, ofile);
+			}
 		}
 	}
 	free(line);

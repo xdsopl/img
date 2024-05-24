@@ -95,10 +95,14 @@ void leb128(FILE *file, long value)
 	fputc(value, file);
 }
 
-void encode(FILE *file, unsigned diff, long count, int channels)
+void pair(long *y, long x)
 {
-	fwrite(&diff, channels, 1, file);
-	leb128(file, count);
+	*y = (x * x + x + 2 * x * *y + 3 * *y + *y * *y) / 2;
+}
+
+int abs_sgn(int x)
+{
+	return (abs(x) << 1) | (x < 0);
 }
 
 int main(int argc, char **argv)
@@ -119,26 +123,34 @@ int main(int argc, char **argv)
 		fclose(ifile);
 		return 1;
 	}
-	unsigned *line = calloc(width, sizeof(unsigned));
-	unsigned prev = 0;
-	long count = 0;
+	uint8_t *line = calloc(width, channels);
+	long previous = 0, counter = 0;
 	for (long i = 0; i < width * height; ++i) {
-		unsigned value = 0;
-		if (channels != (int)fread(&value, 1, channels, ifile))
-			goto eof;
-		unsigned diff = value - line[i%width];
-		line[i%width] = value;
+		long packed = 0;
+		for (int c = 0; c < channels; ++c) {
+			int value = fgetc(ifile);
+			if (value < 0)
+				goto eof;
+			int diff = abs_sgn(value - line[(i%width)*channels+c]);
+			line[(i%width)*channels+c] = value;
+			if (c)
+				pair(&packed, diff);
+			else
+				packed = diff;
+		}
 		if (!i) {
-			prev = diff;
-		} else if (prev == diff) {
-			++count;
+			previous = packed;
+		} else if (previous == packed) {
+			++counter;
 		} else {
-			encode(ofile, prev, count, channels);
-			prev = diff;
-			count = 0;
+			leb128(ofile, counter);
+			leb128(ofile, previous);
+			previous = packed;
+			counter = 0;
 		}
 	}
-	encode(ofile, prev, count, channels);
+	leb128(ofile, counter);
+	leb128(ofile, previous);
 	free(line);
 	fclose(ifile);
 	fclose(ofile);
