@@ -5,7 +5,7 @@ all: encode decode
 
 test: encode decode
 	./encode input.pnm putput.img
-	ls -l putput.img
+	ls -l input.pnm putput.img
 	./decode putput.img output.pnm
 	compare -verbose -metric PSNR input.pnm output.pnm /dev/null ; true
 
