@@ -11,7 +11,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 FILE *open_img(const char *name, int *width, int *height, int *channels)
 {
 	if (name[0] == '-' && !name[1])
-		name =  "/dev/stdin";
+		name = "/dev/stdin";
 	FILE *file = fopen(name, "r");
 	if (!file) {
 		fprintf(stderr, "could not open \"%s\" file for reading\n", name);
@@ -37,7 +37,7 @@ FILE *open_img(const char *name, int *width, int *height, int *channels)
 FILE *open_pnm(const char *name, int width, int height, int channels)
 {
 	if (name[0] == '-' && !name[1])
-		name =  "/dev/stdout";
+		name = "/dev/stdout";
 	FILE *file = fopen(name, "w");
 	if (!file) {
 		fprintf(stderr, "could not open \"%s\" file for writing\n", name);
@@ -107,8 +107,8 @@ int main(int argc, char **argv)
 			count += leb128(ifile);
 		for (++count; count--; ++i) {
 			for (int c = 0; c < channels; ++c) {
-				int value = diff[c] + line[(i%width)*channels+c];
-				line[(i%width)*channels+c] = value;
+				int value = diff[c] + line[(i % width) * channels + c];
+				line[(i % width) * channels + c] = value;
 				fputc(value, ofile);
 			}
 		}

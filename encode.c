@@ -11,7 +11,7 @@ Copyright 2024 Ahmet Inan <xdsopl@gmail.com>
 FILE *open_pnm(const char *name, int *width, int *height, int *channels)
 {
 	if (name[0] == '-' && !name[1])
-		name =  "/dev/stdin";
+		name = "/dev/stdin";
 	FILE *file = fopen(name, "r");
 	if (!file) {
 		fprintf(stderr, "could not open \"%s\" file for reading\n", name);
@@ -72,13 +72,13 @@ eof:
 FILE *open_img(const char *name, int width, int height, int channels)
 {
 	if (name[0] == '-' && !name[1])
-		name =  "/dev/stdout";
+		name = "/dev/stdout";
 	FILE *file = fopen(name, "w");
 	if (!file) {
 		fprintf(stderr, "could not open \"%s\" file for writing\n", name);
 		return 0;
 	}
-	uint16_t dimensions[2] = { width - 1, height - 1};
+	uint16_t dimensions[2] = { width - 1, height - 1 };
 	if (3 != fwrite("IMG", 1, 3, file) || channels != fputc(channels, file) || 2 != fwrite(dimensions, 2, 2, file)) {
 		fprintf(stderr, "could not write to file \"%s\"\n", name);
 		fclose(file);
@@ -100,7 +100,7 @@ long interleave(const int *values, int count)
 	long mixed = 0;
 	for (int j = 0; j < count; ++j) {
 		int v = values[j];
-		for (int i = j; v ; i += count, v >>= 1)
+		for (int i = j; v; i += count, v >>= 1)
 			mixed |= (v & 1L) << i;
 	}
 	return mixed;
@@ -139,8 +139,8 @@ int main(int argc, char **argv)
 			int value = fgetc(ifile);
 			if (value < 0)
 				goto eof;
-			diff[c] = abs_sgn(value - line[(i%width)*channels+c]);
-			line[(i%width)*channels+c] = value;
+			diff[c] = abs_sgn(value - line[(i % width) * channels + c]);
+			line[(i % width) * channels + c] = value;
 			equal &= diff[c] == prev[c];
 		}
 		if (!i) {
