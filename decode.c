@@ -92,6 +92,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	uint8_t *line = calloc(width, channels);
+	long limit = channels == 3 ? 255 : 4095;
 	for (long i = 0; i < width * height;) {
 		long mixed = leb128(ifile);
 		if (mixed < 0)
@@ -101,7 +102,7 @@ int main(int argc, char **argv)
 		for (int c = 0; c < channels; ++c)
 			diff[c] = sgn_int(diff[c]);
 		long count = diff[channels];
-		if (count == 255)
+		if (count == limit)
 			count += leb128(ifile);
 		for (++count; count--; ++i) {
 			for (int c = 0; c < channels; ++c) {
