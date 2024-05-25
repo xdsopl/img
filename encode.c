@@ -132,7 +132,8 @@ int main(int argc, char **argv)
 	uint8_t *line = calloc(width, channels);
 	int prev[4] = { 0, 0, 0, 0 };
 	long count = 0, limit = channels == 3 ? 255 : 4095;
-	for (long i = 0; i < width * height; ++i) {
+	long total = width * height;
+	for (long i = 0; i < total; ++i) {
 		int diff[3], equal = 1;
 		for (int c = 0; c < channels; ++c) {
 			int value = fgetc(ifile);
@@ -145,29 +146,24 @@ int main(int argc, char **argv)
 		if (!i) {
 			for (int c = 0; c < channels; ++c)
 				prev[c] = diff[c];
-		} else if (equal) {
-			++count;
-		} else {
-			if (count < limit) {
-				prev[channels] = count;
-				leb128(ofile, interleave(prev, channels + 1));
-			} else {
-				prev[channels] = limit;
-				leb128(ofile, interleave(prev, channels + 1));
-				leb128(ofile, count - limit);
-			}
-			for (int c = 0; c < channels; ++c)
-				prev[c] = diff[c];
-			count = 0;
+			continue;
 		}
-	}
-	if (count < limit) {
-		prev[channels] = count;
-		leb128(ofile, interleave(prev, channels + 1));
-	} else {
-		prev[channels] = limit;
-		leb128(ofile, interleave(prev, channels + 1));
-		leb128(ofile, count - limit);
+		if (equal) {
+			++count;
+			if (i < total - 1)
+				continue;
+		}
+		if (count < limit) {
+			prev[channels] = count;
+			leb128(ofile, interleave(prev, channels + 1));
+		} else {
+			prev[channels] = limit;
+			leb128(ofile, interleave(prev, channels + 1));
+			leb128(ofile, count - limit);
+		}
+		for (int c = 0; c < channels; ++c)
+			prev[c] = diff[c];
+		count = 0;
 	}
 	free(line);
 	fclose(ifile);

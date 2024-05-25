@@ -93,7 +93,8 @@ int main(int argc, char **argv)
 	}
 	uint8_t *line = calloc(width, channels);
 	long limit = channels == 3 ? 255 : 4095;
-	for (long i = 0; i < width * height;) {
+	long total = width * height;
+	for (long i = 0; i < total;) {
 		long mixed = leb128(ifile);
 		if (mixed < 0)
 			goto eof;
