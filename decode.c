@@ -63,12 +63,13 @@ long leb128(FILE *file)
 	return value | (byte << shift);
 }
 
-void deinterleave(long mixed, int *values, int count, int bits)
+void deinterleave(long mixed, int *values, int count)
 {
 	for (int j = 0; j < count; ++j) {
 		values[j] = 0;
-		for (int i = 0; i < bits; ++i)
-			values[j] |= ((mixed >> (count * i + j)) & 1) << i;
+		long m = mixed >> j;
+		for (int i = 0; m; ++i, m >>= count)
+			values[j] |= (m & 1L) << i;
 	}
 }
 
@@ -96,7 +97,7 @@ int main(int argc, char **argv)
 		if (mixed < 0)
 			goto eof;
 		int diff[4];
-		deinterleave(mixed, diff, channels + 1, 9);
+		deinterleave(mixed, diff, channels + 1);
 		for (int c = 0; c < channels; ++c)
 			diff[c] = sgn_int(diff[c]);
 		long count = diff[channels];

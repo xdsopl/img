@@ -95,12 +95,14 @@ void leb128(FILE *file, long value)
 	fputc(value, file);
 }
 
-long interleave(const int *values, int count, int bits)
+long interleave(const int *values, int count)
 {
 	long mixed = 0;
-	for (int j = 0; j < count; ++j)
-		for (int i = 0; i < bits; ++i)
-			mixed |= ((values[j] >> i) & 1L) << (count * i + j);
+	for (int j = 0; j < count; ++j) {
+		int v = values[j];
+		for (int i = j; v ; i += count, v >>= 1)
+			mixed |= (v & 1L) << i;
+	}
 	return mixed;
 }
 
@@ -148,10 +150,10 @@ int main(int argc, char **argv)
 		} else {
 			if (count < 255) {
 				prev[channels] = count;
-				leb128(ofile, interleave(prev, channels + 1, 9));
+				leb128(ofile, interleave(prev, channels + 1));
 			} else {
 				prev[channels] = 255;
-				leb128(ofile, interleave(prev, channels + 1, 9));
+				leb128(ofile, interleave(prev, channels + 1));
 				leb128(ofile, count - 255);
 			}
 			for (int c = 0; c < channels; ++c)
@@ -161,10 +163,10 @@ int main(int argc, char **argv)
 	}
 	if (count < 255) {
 		prev[channels] = count;
-		leb128(ofile, interleave(prev, channels + 1, 9));
+		leb128(ofile, interleave(prev, channels + 1));
 	} else {
 		prev[channels] = 255;
-		leb128(ofile, interleave(prev, channels + 1, 9));
+		leb128(ofile, interleave(prev, channels + 1));
 		leb128(ofile, count - 255);
 	}
 	free(line);
