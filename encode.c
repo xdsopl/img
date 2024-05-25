@@ -139,7 +139,10 @@ int main(int argc, char **argv)
 			int value = fgetc(ifile);
 			if (value < 0)
 				goto eof;
-			diff[c] = abs_sgn(value - line[(i % width) * channels + c]);
+			int pred = line[(i % width) * channels + c];
+			// if (i % width)
+			// 	pred = (pred + line[(i % width - 1) * channels + c] + 1) / 2;
+			diff[c] = abs_sgn(value - pred);
 			line[(i % width) * channels + c] = value;
 			equal &= diff[c] == prev[c];
 		}

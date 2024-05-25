@@ -107,7 +107,10 @@ int main(int argc, char **argv)
 			count += leb128(ifile);
 		for (++count; count--; ++i) {
 			for (int c = 0; c < channels; ++c) {
-				int value = diff[c] + line[(i % width) * channels + c];
+				int pred = line[(i % width) * channels + c];
+				// if (i % width)
+				// 	pred = (pred + line[(i % width - 1) * channels + c] + 1) / 2;
+				int value = diff[c] + pred;
 				line[(i % width) * channels + c] = value;
 				fputc(value, ofile);
 			}
