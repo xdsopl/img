@@ -119,6 +119,7 @@ int main(int argc, char **argv)
 	FILE *ifile = open_pnm(argv[1], &width, &height, &channels);
 	if (!ifile)
 		return 1;
+	fprintf(stderr, "width = %d, height = %d, channels = %d\n", width, height, channels);
 	if (width > 65536 || height > 65536) {
 		fprintf(stderr, "max supported width or height is 65536\n");
 		fclose(ifile);
