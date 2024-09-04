@@ -75,7 +75,7 @@ void deinterleave(long mixed, int *values, int count)
 
 int sgn_int(int x)
 {
-	return (x & 1) ? -(x >> 1) : (x >> 1);
+	return (x >> 1) ^ -(x & 1);
 }
 
 int main(int argc, char **argv)

@@ -106,9 +106,9 @@ long interleave(const int *values, int count)
 	return mixed;
 }
 
-int abs_sgn(int x)
+int uns_int(int x)
 {
-	return (abs(x) << 1) | (x < 0);
+	return (x << 1) ^ (x >> 31);
 }
 
 int main(int argc, char **argv)
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 			int pred = line[(i % width) * channels + c];
 			// if (i % width)
 			// 	pred = (pred + line[(i % width - 1) * channels + c] + 1) / 2;
-			diff[c] = abs_sgn(value - pred);
+			diff[c] = uns_int(value - pred);
 			line[(i % width) * channels + c] = value;
 			equal &= diff[c] == prev[c];
 		}
